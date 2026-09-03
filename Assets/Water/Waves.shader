@@ -7,9 +7,6 @@ Shader "Custom/Waves"
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
 
-        _WaveA ("Wave A (dir, steepness, wavelength)", Vector) = (1,0,0.5,10)
-        _WaveB ("Wave B ", Vector) = (0,1,0.25,20)
-        _WaveC ("Wave C ", Vector) = (1,1,0.15,10)
     }
     SubShader
     {
@@ -32,8 +29,12 @@ Shader "Custom/Waves"
         half _Glossiness;
         half _Metallic;
         fixed4 _Color;
+        float _MyTime;
 
-        float4 _WaveA, _WaveB, _WaveC;
+        // Must match GerstnerWaves.MaxWaves in GerstnerWaves.cs.
+        #define MAX_WAVES 8
+        float4 _Waves[MAX_WAVES];
+        int _WaveCount;
 
         float3 GerstnerWave(float4 wave, float3 position, inout float3 tangent, inout float3 binormal)
         {
@@ -44,7 +45,7 @@ Shader "Custom/Waves"
             float k = 2 * UNITY_PI / wavelength;
             float speed = sqrt( 9.8 / k);
             //float2 direction = normalize(_Direction);
-            float f = k * (dot(direction,position.xz) - speed * _Time.y);
+            float f = k * (dot(direction,position.xz) - speed * _MyTime);
             float amplitude = steepness / k;
             //position.x += cos(f) * amplitude * direction.x;
             //position.y = sin(f) * amplitude;
@@ -66,24 +67,15 @@ Shader "Custom/Waves"
                 direction.y * amplitude * cos(f));
         }
 
-        // Put this is Properties
-        // _WaveA ("Wave A (dir, steepness, wavelength)", Vector) = (1,0,0.5,10)
-        // _WaveB ("Wave B ", Vector) = (0,1,0.25,20)
-        // _WaveC ("Wave C ", Vector) = (1,1,0.15,10)
-
-        // in the variables section
-        //  float4 _WaveA, _WaveB, _WaveC;
         void vert(inout appdata_full vertexData)
         {
             float3 originalPosition = vertexData.vertex.xyz;
             float3 tangent = float3(1,0,0);
             float3 binormal = float3(0,0,1);
-           
-            float3 p = originalPosition;
-            p += GerstnerWave(_WaveA, originalPosition, tangent, binormal);
-            p += GerstnerWave(_WaveB, originalPosition, tangent, binormal);
-            p += GerstnerWave(_WaveC, originalPosition, tangent, binormal);
 
+            float3 p = originalPosition;
+            for (int i = 0; i < _WaveCount; i++)
+                p += GerstnerWave(_Waves[i], originalPosition, tangent, binormal);
 
             float3 normal = normalize(cross(binormal, tangent));
 

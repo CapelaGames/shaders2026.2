@@ -1,15 +1,24 @@
 using UnityEngine;
 
+//https://www.youtube.com/watch?v=B0T7UxjsLxU
 [ExecuteAlways]
 public class GerstnerWaves : MonoBehaviour
 {
-    // (direction.x, direction.y, steepness, wavelength)
-    public Vector4 waveA = new Vector4(1, 0, 0.5f, 10);
-    public Vector4 waveB = new Vector4(0, 1, 0.25f, 20);
-    public Vector4 waveC = new Vector4(1, 1, 0.15f, 10);
+    // Must match MAX_WAVES in Waves.shader.
+    public const int MaxWaves = 8;
+
+    public Vector4[] waves = new Vector4[]
+    {
+        new Vector4(0.80f,  0.60f, 0.32f, 51f),
+        new Vector4(-0.42f, 0.91f, 0.22f, 23f),
+        new Vector4(0.95f, -0.31f, 0.16f, 13f),
+        new Vector4(-0.65f,-0.76f, 0.14f, 7.5f),
+        new Vector4(0.15f,  0.99f, 0.10f, 3.6f),
+    };
 
     Renderer rend;
     MaterialPropertyBlock block;
+    Vector4[] waveBuffer = new Vector4[MaxWaves];
 
     void OnEnable()
     {
@@ -18,9 +27,9 @@ public class GerstnerWaves : MonoBehaviour
         Apply();
     }
 
-    void OnValidate() => Apply();  
+    void OnValidate() => Apply();
 
-    void Update() => Apply();      
+    void Update() => Apply();
 
     void Apply()
     {
@@ -28,14 +37,18 @@ public class GerstnerWaves : MonoBehaviour
         if (rend == null) return;
         if (block == null) block = new MaterialPropertyBlock();
 
+        int count = Mathf.Min(waves.Length, MaxWaves);
+        for (int i = 0; i < MaxWaves; i++)
+            waveBuffer[i] = i < count ? waves[i] : Vector4.zero;
+
         rend.GetPropertyBlock(block);
-        block.SetVector("_WaveA", waveA);
-        block.SetVector("_WaveB", waveB);
-        block.SetVector("_WaveC", waveC);
+        block.SetVectorArray("_Waves", waveBuffer);
+        block.SetInt("_WaveCount", count);
+        block.SetFloat("_MyTime", Time.time);
         rend.SetPropertyBlock(block);
     }
 
-    Vector3 GerstnerWave(Vector4 wave, Vector3 position, ref Vector3 tangent, ref Vector3 binormal, float time)
+    Vector3 GerstnerWave(Vector4 wave, Vector3 position, ref Vector3 tangent, ref Vector3 binormal)
     {
         Vector2 direction = new Vector2(wave.x, wave.y).normalized;
         float steepness = wave.z;
@@ -43,7 +56,7 @@ public class GerstnerWaves : MonoBehaviour
 
         float k = 2f * Mathf.PI / wavelength;
         float speed = Mathf.Sqrt(9.8f / k);
-        float f = k * (Vector2.Dot(direction, new Vector2(position.x, position.z)) - speed * time);
+        float f = k * (Vector2.Dot(direction, new Vector2(position.x, position.z)) - speed * Time.time);
         float amplitude = steepness / k;
 
         tangent += new Vector3(
@@ -62,17 +75,21 @@ public class GerstnerWaves : MonoBehaviour
             direction.y * amplitude * Mathf.Cos(f));
     }
 
-    public Vector3 GetSurfacePoint(Vector3 originalPosition, float time, out Vector3 normal)
+    public Vector3 GetSurfacePoint(Vector3 worldPosition, out Vector3 normal)
     {
+        Vector3 originalPosition = transform.InverseTransformPoint(worldPosition);
+        originalPosition.y = 0f;
+
         Vector3 tangent = new Vector3(1, 0, 0);
         Vector3 binormal = new Vector3(0, 0, 1);
 
         Vector3 p = originalPosition;
-        p += GerstnerWave(waveA, originalPosition, ref tangent, ref binormal, time);
-        p += GerstnerWave(waveB, originalPosition, ref tangent, ref binormal, time);
-        p += GerstnerWave(waveC, originalPosition, ref tangent, ref binormal, time);
+        for (int i = 0; i < waves.Length && i < MaxWaves; i++)
+            p += GerstnerWave(waves[i], originalPosition, ref tangent, ref binormal);
 
-        normal = Vector3.Cross(binormal, tangent).normalized;
-        return p;
+        Vector3 localNormal = Vector3.Cross(binormal, tangent).normalized;
+
+        normal = transform.worldToLocalMatrix.transpose.MultiplyVector(localNormal).normalized;
+        return transform.TransformPoint(p);
     }
 }
