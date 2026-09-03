@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Unlit_HealthBar
-  m_Shader: {fileID: 4800000, guid: ae359f8ce2c61c347b5857ccf0f48310, type: 3}
+  m_Name: Custom_Waves
+  m_Shader: {fileID: 4800000, guid: 3a1d02c93af44c24e98a864cf4664161, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -19,7 +19,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties: 
+  m_LockedProperties: _Metallic
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -29,7 +29,17 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Health: 0.688
-    m_Colors: []
+    - _Amplitude: -0.21
+    - _Glossiness: 0.84
+    - _Metallic: 0.055
+    - _Speed: 1.08
+    - _Steepness: 0.234
+    - _Wavelength: 0.65
+    m_Colors:
+    - _Color: {r: 0.28034887, g: 0.3643348, b: 0.9433962, a: 1}
+    - _Direction: {r: 2.86, g: 1.16, b: 0, a: 0}
+    - _WaveA: {r: 7.64, g: 4.22, b: 0.08, a: 2.39}
+    - _WaveB: {r: -15.54, g: -36.4, b: 0.07, a: 3.14}
+    - _WaveC: {r: 1, g: -2.96, b: 0.09, a: 1.45}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
